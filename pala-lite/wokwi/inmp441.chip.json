@@ -1,0 +1,13 @@
+{
+  "name": "INMP441 mic",
+  "author": "Pala Lite",
+  "pins": [
+    "VDD",
+    "GND",
+    "LR",
+    "SCK",
+    "WS",
+    "SD"
+  ],
+  "controls": []
+}

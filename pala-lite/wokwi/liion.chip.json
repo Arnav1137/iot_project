@@ -1,0 +1,9 @@
+{
+  "name": "Li-ion 3.7V 2000mAh",
+  "author": "Pala Lite",
+  "pins": [
+    "BAT_P",
+    "BAT_N"
+  ],
+  "controls": []
+}

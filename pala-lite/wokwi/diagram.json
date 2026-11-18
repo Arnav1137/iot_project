@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "author": "Pala Lite",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "board-ssd1306",
+      "id": "oled",
+      "top": -30,
+      "left": 220,
+      "attrs": {
+        "i2cAddress": "0x3c"
+      }
+    },
+    {
+      "type": "wokwi-microsd-card",
+      "id": "sd",
+      "top": 90,
+      "left": 230,
+      "rotate": 90,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "rec",
+      "top": 200,
+      "left": -240,
+      "attrs": {
+        "color": "red",
+        "label": "REC",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "ask",
+      "top": 270,
+      "left": -240,
+      "attrs": {
+        "color": "blue",
+        "label": "ASK",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "chip-inmp441",
+      "id": "mic",
+      "top": 0,
+      "left": -250,
+      "attrs": {}
+    },
+    {
+      "type": "chip-max98357a",
+      "id": "amp",
+      "top": 90,
+      "left": -250,
+      "attrs": {}
+    },
+    {
+      "type": "chip-speaker",
+      "id": "spk",
+      "top": 110,
+      "left": -400,
+      "attrs": {}
+    },
+    {
+      "type": "chip-liion",
+      "id": "bat",
+      "top": -200,
+      "left": -330,
+      "attrs": {}
+    },
+    {
+      "type": "chip-tp4056",
+      "id": "chg",
+      "top": -200,
+      "left": -190,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "sw",
+      "top": -205,
+      "left": -40,
+      "attrs": {
+        "value": "1"
+      }
+    },
+    {
+      "type": "chip-mt3608",
+      "id": "boost",
+      "top": -200,
+      "left": 40,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 250,
+      "left": 230,
+      "rotate": 0,
+      "attrs": {
+        "value": "100000"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 290,
+      "left": 230,
+      "rotate": 0,
+      "attrs": {
+        "value": "100000"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "bat:BAT_P",
+      "chg:B_P",
+      "red",
+      []
+    ],
+    [
+      "bat:BAT_N",
+      "chg:B_N",
+      "black",
+      []
+    ],
+    [
+      "chg:OUT_P",
+      "sw:2",
+      "red",
+      []
+    ],
+    [
+      "sw:1",
+      "boost:VIN_P",
+      "red",
+      []
+    ],
+    [
+      "chg:OUT_N",
+      "boost:VIN_N",
+      "black",
+      []
+    ],
+    [
+      "boost:VOUT_P",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "boost:VOUT_N",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "oled:VCC",
+      "esp:3V3",
+      "orange",
+      []
+    ],
+    [
+      "oled:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "oled:SDA",
+      "esp:D21",
+      "blue",
+      []
+    ],
+    [
+      "oled:SCL",
+      "esp:D22",
+      "gold",
+      []
+    ],
+    [
+      "sd:VCC",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "sd:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "sd:SCK",
+      "esp:D18",
+      "gold",
+      []
+    ],
+    [
+      "sd:DO",
+      "esp:D19",
+      "green",
+      []
+    ],
+    [
+      "sd:DI",
+      "esp:D23",
+      "blue",
+      []
+    ],
+    [
+      "sd:CS",
+      "esp:D5",
+      "purple",
+      []
+    ],
+    [
+      "mic:VDD",
+      "esp:3V3",
+      "orange",
+      []
+    ],
+    [
+      "mic:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "mic:LR",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "mic:SCK",
+      "esp:D26",
+      "gold",
+      []
+    ],
+    [
+      "mic:WS",
+      "esp:D27",
+      "purple",
+      []
+    ],
+    [
+      "mic:SD",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "amp:VIN",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "amp:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "amp:BCLK",
+      "esp:D14",
+      "gold",
+      []
+    ],
+    [
+      "amp:LRC",
+      "esp:D13",
+      "purple",
+      []
+    ],
+    [
+      "amp:DIN",
+      "esp:D4",
+      "blue",
+      []
+    ],
+    [
+      "amp:SPK_P",
+      "spk:P",
+      "red",
+      []
+    ],
+    [
+      "amp:SPK_N",
+      "spk:N",
+      "black",
+      []
+    ],
+    [
+      "rec:1.l",
+      "esp:D32",
+      "green",
+      []
+    ],
+    [
+      "rec:2.l",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "ask:1.l",
+      "esp:D33",
+      "blue",
+      []
+    ],
+    [
+      "ask:2.l",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "bat:BAT_P",
+      "r1:1",
+      "red",
+      []
+    ],
+    [
+      "r1:2",
+      "esp:D35",
+      "white",
+      []
+    ],
+    [
+      "esp:D35",
+      "r2:1",
+      "white",
+      []
+    ],
+    [
+      "r2:2",
+      "esp:GND.1",
+      "black",
+      []
+    ]
+  ],
+  "dependencies": {}
+}

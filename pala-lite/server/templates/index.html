@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pala Lite</title>
+<style>
+  :root { --bg:#f6f5f1; --card:#fff; --ink:#1d1d1b; --mute:#77756f; --line:#e4e2dc;
+          --task:#2f6fdf; --appt:#c2541b; --mem:#3c8a4f; --accent:#1d1d1b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 24px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--line); background:var(--card); position:sticky; top:0; z-index:2; }
+  header h1 { font-size:20px; margin:0; letter-spacing:-.02em; }
+  nav { display:flex; gap:4px; flex-wrap:wrap; }
+  nav button { border:0; background:none; padding:8px 12px; border-radius:8px; cursor:pointer; font:inherit; color:var(--mute); }
+  nav button.on { background:var(--ink); color:#fff; }
+  main { max-width:960px; margin:0 auto; padding:24px; }
+  .bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  input, select, textarea { font:inherit; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  input[type=search] { flex:1; min-width:200px; }
+  .btn { font:inherit; padding:9px 14px; border-radius:8px; border:1px solid var(--ink); background:var(--ink); color:#fff; cursor:pointer; }
+  .btn.ghost { background:#fff; color:var(--ink); border-color:var(--line); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .row { display:flex; align-items:flex-start; gap:12px; }
+  .tag { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:99px; color:#fff; }
+  .task { background:var(--task);} .appointment { background:var(--appt);} .memory { background:var(--mem);}
+  .title { font-weight:600; }
+  .meta { color:var(--mute); font-size:13px; }
+  .done .title { text-decoration:line-through; color:var(--mute); }
+  details { margin-top:6px; } summary { cursor:pointer; color:var(--mute); font-size:13px; }
+  audio { width:100%; max-width:380px; height:34px; margin-top:8px; }
+  .actions { margin-left:auto; display:flex; gap:6px; }
+  .actions button, .actions a { font-size:12px; border:1px solid var(--line); background:#fff; border-radius:6px; padding:4px 8px; cursor:pointer; color:var(--ink); text-decoration:none; }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal .h { text-align:center; font-size:12px; color:var(--mute); padding:4px; }
+  .cal .d { background:#fff; border:1px solid var(--line); border-radius:8px; min-height:86px; padding:6px; font-size:12px; }
+  .cal .d.other { opacity:.35; } .cal .d.today { border-color:var(--ink); border-width:2px; }
+  .ev { display:block; border-radius:4px; padding:1px 4px; margin-top:3px; color:#fff; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .empty { color:var(--mute); text-align:center; padding:40px; }
+  .answer { white-space:pre-wrap; }
+  h3 { margin:24px 0 8px; font-size:15px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎙 Pala Lite</h1>
+  <nav id="tabs">
+    <button data-t="memories" class="on">All notes</button>
+    <button data-t="tasks">Tasks</button>
+    <button data-t="calendar">Calendar</button>
+    <button data-t="qa">Questions</button>
+    <button data-t="try">Try it</button>
+  </nav>
+</header>
+<main id="view"></main>
+
+<script>
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const api = async (url, opts={}) => { const r = await fetch(url, opts); if (!r.ok) throw new Error(await r.text()); return r.json(); };
+const post = (url, body, method="POST") => api(url, {method, headers:{"Content-Type":"application/json"}, body: JSON.stringify(body||{})});
+const fmt = s => s ? new Date(s).toLocaleString([], {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "";
+let tab = "memories", calMonth = new Date();
+
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); tab = b.dataset.t; render();
+});
+
+function itemCard(it) {
+  const when = it.type === "appointment" ? `📅 ${fmt(it.start)}` : it.type === "task" && it.due ? `⏰ due ${fmt(it.due)}` : "";
+  return `<div class="card ${it.done ? "done" : ""}"><div class="row">
+    ${it.type === "task" ? `<input type="checkbox" ${it.done ? "checked" : ""} onchange="toggle(${it.id}, this.checked)">` : ""}
+    <div style="flex:1">
+      <span class="tag ${it.type}">${it.type}</span> <span class="title">${esc(it.title)}</span>
+      <div class="meta">${esc(it.summary)}</div>
+      <div class="meta">${when} · recorded ${fmt(it.created_at)} ${it.tags?.length ? "· #" + it.tags.map(esc).join(" #") : ""}
+        ${it.markers ? `· markers at ${esc(it.markers)} s` : ""}</div>
+      ${it.transcript ? `<details><summary>Transcript</summary>${esc(it.transcript)}</details>` : ""}
+      ${it.audio_file ? `<audio controls preload="none" src="/audio/${it.audio_file}"></audio>` : ""}
+    </div>
+    <div class="actions">
+      ${it.pending ? `<button onclick="reprocess(${it.id}, this)">Reprocess</button>` : ""}
+      ${it.audio_file ? `<a href="/audio/${it.audio_file}?download=1">Download</a>` : ""}
+      <button onclick="del(${it.id})">Delete</button>
+    </div></div></div>`;
+}
+
+async function toggle(id, done) { await post(`/api/items/${id}`, {done}); render(); }
+async function del(id) { if (confirm("Delete this note?")) { await api(`/api/items/${id}`, {method:"DELETE"}); render(); } }
+async function reprocess(id, btn) { btn.textContent = "Working…"; try { await post(`/api/items/${id}/reprocess`); } catch(e) { alert(e.message); } render(); }
+
+async function renderMemories() {
+  const v = $("#view");
+  if (!$("#q")) v.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search your notes…">
+      <select id="ty"><option value="">All types</option><option value="memory">Memories</option><option value="task">Tasks</option><option value="appointment">Appointments</option></select></div><div id="list"></div>`;
+  $("#q").oninput = $("#ty").onchange = renderMemoriesList;
+  renderMemoriesList();
+}
+async function renderMemoriesList() {
+  const items = await api(`/api/items?q=${encodeURIComponent($("#q").value)}&type=${$("#ty").value}`);
+  $("#list").innerHTML = items.length ? items.map(itemCard).join("") : `<div class="empty">No notes yet. Hold the upper button on Pala and speak.</div>`;
+}
+
+async function renderTasks() {
+  const items = await api("/api/items?type=task");
+  const open = items.filter(i => !i.done).sort((a,b) => (a.due||"9") < (b.due||"9") ? -1 : 1), done = items.filter(i => i.done);
+  $("#view").innerHTML = `<h3>Open (${open.length})</h3>${open.map(itemCard).join("") || '<div class="empty">Nothing to do 🎉</div>'}
+    <h3>Done (${done.length})</h3>${done.map(itemCard).join("")}`;
+}
+
+async function renderCalendar() {
+  const items = (await api("/api/items")).filter(i => (i.type === "appointment" && i.start) || (i.type === "task" && i.due));
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  const first = new Date(y, m, 1), start = new Date(y, m, 1 - ((first.getDay() + 6) % 7));
+  const key = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const today = key(new Date());
+  let cells = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<div class="h">${d}</div>`).join("");
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i); const k = key(d);
+    const evs = items.filter(it => (it.start || it.due || "").startsWith(k));
+    cells += `<div class="d ${d.getMonth() !== m ? "other" : ""} ${k === today ? "today" : ""}"><b>${d.getDate()}</b>
+      ${evs.map(e => `<span class="ev ${e.type}" title="${esc(e.title)}">${(e.start||e.due).slice(11,16)} ${esc(e.title)}</span>`).join("")}</div>`;
+  }
+  $("#view").innerHTML = `<div class="bar"><button class="btn ghost" id="pm">←</button>
+    <div style="flex:1;text-align:center;font-weight:600;padding:8px">${first.toLocaleString([], {month:"long", year:"numeric"})}</div>
+    <button class="btn ghost" id="nm">→</button></div><div class="cal">${cells}</div>`;
+  $("#pm").onclick = () => { calMonth = new Date(y, m - 1, 1); renderCalendar(); };
+  $("#nm").onclick = () => { calMonth = new Date(y, m + 1, 1); renderCalendar(); };
+}
+
+async function renderQA() {
+  const qa = await api("/api/qa");
+  $("#view").innerHTML = qa.length ? qa.map(x => `<div class="card"><div class="title">Q: ${esc(x.question)}</div>
+    <div class="answer">${esc(x.answer)}</div><div class="meta">${fmt(x.created_at)}</div>
+    ${x.audio_file ? `<audio controls preload="none" src="/audio/${x.audio_file}"></audio>` : ""}</div>`).join("")
+    : `<div class="empty">No questions yet. Hold the lower button on Pala and ask something.</div>`;
+}
+
+function renderTry() {
+  $("#view").innerHTML = `
+  <div class="card"><div class="title">Add a note by typing (tests the AI without the device)</div>
+    <div class="bar" style="margin-top:8px"><input id="tn" style="flex:1" placeholder="e.g. Meeting with Dr. Rana tomorrow at 3pm about the DAA file">
+    <button class="btn" id="tnb">Add</button></div><div id="tnr" class="meta"></div></div>
+  <div class="card"><div class="title">Ask about your notes</div>
+    <div class="bar" style="margin-top:8px"><input id="tq" style="flex:1" placeholder="e.g. What do I have tomorrow?">
+    <button class="btn" id="tqb">Ask</button></div><div id="tqr" class="answer"></div></div>
+  <div class="card"><div class="title">Spoken briefings</div>
+    <div class="bar" style="margin-top:8px"><button class="btn ghost" id="bd">▶ Today</button><button class="btn ghost" id="bw">▶ This week</button></div>
+    <div id="br" class="answer"></div><audio id="ba" controls style="display:none"></audio></div>`;
+  $("#tnb").onclick = async () => { $("#tnr").textContent = "Thinking…";
+    try { const r = await post("/api/text_note", {text: $("#tn").value});
+      $("#tnr").textContent = "Saved: " + r.items.map(i => `${i.type.toUpperCase()} – ${i.title}`).join(", "); $("#tn").value = ""; }
+    catch (e) { $("#tnr").textContent = e.message; } };
+  $("#tqb").onclick = async () => { $("#tqr").textContent = "Thinking…";
+    try { $("#tqr").textContent = (await post("/api/ask_text", {question: $("#tq").value})).answer; } catch (e) { $("#tqr").textContent = e.message; } };
+  const brief = async kind => { $("#br").textContent = "Preparing audio…";
+    try { const r = await fetch(`/api/briefing?kind=${kind}`); if (!r.ok) throw new Error(await r.text());
+      $("#br").textContent = r.headers.get("X-Answer-Text"); const a = $("#ba"); a.src = URL.createObjectURL(await r.blob()); a.style.display = "block"; a.play(); }
+    catch (e) { $("#br").textContent = e.message; } };
+  $("#bd").onclick = () => brief("day"); $("#bw").onclick = () => brief("week");
+}
+
+function render() {
+  if (tab !== "memories") $("#view").innerHTML = "";
+  ({memories: renderMemories, tasks: renderTasks, calendar: renderCalendar, qa: renderQA, try: renderTry})[tab]();
+}
+render();
+setInterval(() => { if (tab === "memories" || tab === "tasks") render(); }, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "MAX98357A amp",
+  "author": "Pala Lite",
+  "pins": [
+    "VIN",
+    "GND",
+    "BCLK",
+    "LRC",
+    "DIN",
+    "SPK_P",
+    "SPK_N"
+  ],
+  "controls": []
+}

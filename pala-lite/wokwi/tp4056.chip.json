@@ -1,0 +1,11 @@
+{
+  "name": "TP4056 charger",
+  "author": "Pala Lite",
+  "pins": [
+    "B_P",
+    "B_N",
+    "OUT_N",
+    "OUT_P"
+  ],
+  "controls": []
+}

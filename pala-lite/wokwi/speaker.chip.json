@@ -1,0 +1,9 @@
+{
+  "name": "Speaker 40mm",
+  "author": "Pala Lite",
+  "pins": [
+    "P",
+    "N"
+  ],
+  "controls": []
+}

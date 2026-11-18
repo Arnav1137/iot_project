@@ -1,0 +1,11 @@
+{
+  "name": "MT3608 boost 5V",
+  "author": "Pala Lite",
+  "pins": [
+    "VIN_P",
+    "VIN_N",
+    "VOUT_N",
+    "VOUT_P"
+  ],
+  "controls": []
+}
